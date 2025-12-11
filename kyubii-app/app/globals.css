@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+/* Leaflet CSS */
+@import "leaflet/dist/leaflet.css";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  
+  /* Kyubii Theme Colors */
+  --kyubii-primary: #2563eb;
+  --kyubii-secondary: #7c3aed;
+  --kyubii-accent: #f59e0b;
+  
+  /* Category Colors */
+  --color-gourmet: #f97316;
+  --color-activity: #22c55e;
+  --color-tourism: #3b82f6;
+  --color-hotspring: #ef4444;
+  
+  /* Course Colors */
+  --course-a: #ef4444;
+  --course-c: #a855f7;
+  --course-d: #f97316;
+  --course-e: #22c55e;
+  --course-f: #3b82f6;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  
+  /* Expose Kyubii colors to Tailwind */
+  --color-kyubii-primary: var(--kyubii-primary);
+  --color-kyubii-secondary: var(--kyubii-secondary);
+  --color-kyubii-accent: var(--kyubii-accent);
+  --color-gourmet: var(--color-gourmet);
+  --color-activity: var(--color-activity);
+  --color-tourism: var(--color-tourism);
+  --color-hotspring: var(--color-hotspring);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Override Leaflet z-index to stay below UI overlays */
+.leaflet-container {
+  z-index: 0 !important;
+}
+
+.leaflet-pane {
+  z-index: 1 !important;
+}
+
+.leaflet-tile-pane {
+  z-index: 1 !important;
+}
+
+.leaflet-overlay-pane {
+  z-index: 2 !important;
+}
+
+.leaflet-marker-pane {
+  z-index: 3 !important;
+}
+
+.leaflet-tooltip-pane {
+  z-index: 4 !important;
+}
+
+.leaflet-popup-pane {
+  z-index: 5 !important;
+}
+
+.leaflet-control {
+  z-index: 6 !important;
+}
+
+/* Custom Leaflet Marker Styles */
+.leaflet-marker-icon.marker-gourmet {
+  filter: hue-rotate(30deg);
+}
+
+.leaflet-marker-icon.marker-activity {
+  filter: hue-rotate(120deg);
+}
+
+.leaflet-marker-icon.marker-tourism {
+  filter: hue-rotate(200deg);
+}
+
+.leaflet-marker-icon.marker-hotspring {
+  filter: hue-rotate(0deg);
+}
+
+.leaflet-marker-icon.marker-bus-stop {
+  filter: grayscale(100%);
+}
+
+/* Custom marker with number */
+.custom-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--kyubii-primary);
+  color: white;
+  font-weight: 600;
+  font-size: 12px;
+  border: 2px solid white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.custom-marker.bus-stop {
+  background: #6b7280;
+  width: 20px;
+  height: 20px;
+  font-size: 10px;
+}
+
+.custom-marker.gourmet { background: var(--color-gourmet); }
+.custom-marker.activity { background: var(--color-activity); }
+.custom-marker.tourism { background: var(--color-tourism); }
+.custom-marker.hotspring { background: var(--color-hotspring); }
+
+/* Bottom sheet styles for mobile */
+.bottom-sheet {
+  transition: transform 0.3s ease-out;
+}
+
+.bottom-sheet.collapsed {
+  transform: translateY(calc(100% - 80px));
+}
+
+/* Scrollbar styling */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
