@@ -29,3 +29,9 @@
 29= 37.03156195862827, 140.0359026918237
 30= 37.025443781161435, 140.0297962516706
 31= 37.01710771506317, 140.03043298610356 
+
+
+tasks:
+feature 1= make it when one of the spots is selected in the menu, it  only shows that only spot. ic can also show more than one spot, based on user input.
+feature 2= make an animation pop up for the coordinates.
+feature 3= make a popup window containing detailed information that includes details and bus course to detination.

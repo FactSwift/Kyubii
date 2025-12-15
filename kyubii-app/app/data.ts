@@ -81,7 +81,7 @@ export const spots: Spot[] = [
   { id: 30, name: "GOOD News Complex", lat: 37.025443781161435, lng: 140.0297962516706, status: "active", categories: getCategoriesForSpot(30), isBusStop: false },
   { id: 31, name: "Candy Castle", lat: 37.01710771506317, lng: 140.03043298610356, status: "active", categories: getCategoriesForSpot(31), isBusStop: false },
   { id: 32, name: "Loisir Nasu Entrance", lat: 37.059791710961036, lng: 140.03119901686813, status: "active", categories: getCategoriesForSpot(32), isBusStop: false },
-  { id: 33, name: "Spot 33", lat: 37.08160624392203, lng: 139.98126882883588, status: "active", categories: [], isBusStop: false },
+  { id: 33, name: "Bus Stop", lat: 37.08160624392203, lng: 139.98126882883588, status: "active", categories: [], isBusStop: true },
 ];
 
 // Bus Courses with colors
@@ -102,7 +102,7 @@ export const courses: Course[] = [
     id: "D",
     name: "Course D",
     color: "#F97316", // Orange
-    spotIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
+    spotIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 24, 25],
   },
   {
     id: "E",

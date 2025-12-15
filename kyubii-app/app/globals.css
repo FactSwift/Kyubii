@@ -60,6 +60,11 @@ body {
   z-index: 0 !important;
 }
 
+/* Hide Leaflet attribution/watermark */
+.leaflet-control-attribution {
+  display: none !important;
+}
+
 .leaflet-pane {
   z-index: 1 !important;
 }
