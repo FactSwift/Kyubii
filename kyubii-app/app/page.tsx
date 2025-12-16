@@ -176,19 +176,34 @@ export default function Home() {
 
               {/* Trip Plan Banner */}
               {tripPlan && (
-                <div className="mt-4 flex items-center justify-between rounded-lg bg-purple-100 p-3 dark:bg-purple-900/30">
-                  <div className="flex items-center gap-2">
-                    <Route className="h-4 w-4 text-purple-600" />
-                    <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
-                      Trip Plan Active ({tripPlan.spots.length} spots)
-                    </span>
+                <div className="mt-4 rounded-lg bg-purple-100 p-3 dark:bg-purple-900/30">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Route className="h-4 w-4 text-purple-600" />
+                      <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                        Trip Plan Active ({tripPlan.spots.length} spots)
+                      </span>
+                    </div>
+                    <button
+                      onClick={clearTripPlan}
+                      className="text-purple-600 hover:text-purple-800 dark:text-purple-400"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
                   </div>
-                  <button
-                    onClick={clearTripPlan}
-                    className="text-purple-600 hover:text-purple-800 dark:text-purple-400"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                  {(tripPlan.totalTravelTime || tripPlan.totalDistance) && (
+                    <div className="mt-2 flex flex-wrap gap-3 text-xs text-purple-600 dark:text-purple-400">
+                      {tripPlan.totalTravelTime && (
+                        <span>🚗 {tripPlan.totalTravelTime} min travel</span>
+                      )}
+                      {tripPlan.totalActivityTime && (
+                        <span>⏱️ {tripPlan.totalActivityTime} min activities</span>
+                      )}
+                      {tripPlan.totalDistance && (
+                        <span>📍 {tripPlan.totalDistance} km</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -285,19 +300,28 @@ export default function Home() {
 
         {/* Trip Plan Banner (Mobile) */}
         {tripPlan && (
-          <div className="mx-4 mb-2 flex items-center justify-between rounded-lg bg-purple-100 p-2 dark:bg-purple-900/30">
-            <div className="flex items-center gap-2">
-              <Route className="h-4 w-4 text-purple-600" />
-              <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
-                Trip Plan ({tripPlan.spots.length} spots)
-              </span>
+          <div className="mx-4 mb-2 rounded-lg bg-purple-100 p-2 dark:bg-purple-900/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Route className="h-4 w-4 text-purple-600" />
+                <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                  Trip Plan ({tripPlan.spots.length} spots)
+                </span>
+              </div>
+              <button
+                onClick={clearTripPlan}
+                className="text-purple-600 hover:text-purple-800"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-            <button
-              onClick={clearTripPlan}
-              className="text-purple-600 hover:text-purple-800"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            {(tripPlan.totalTravelTime || tripPlan.totalDistance) && (
+              <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-purple-600 dark:text-purple-400">
+                {tripPlan.totalTravelTime && <span>🚗 {tripPlan.totalTravelTime}m</span>}
+                {tripPlan.totalActivityTime && <span>⏱️ {tripPlan.totalActivityTime}m</span>}
+                {tripPlan.totalDistance && <span>📍 {tripPlan.totalDistance}km</span>}
+              </div>
+            )}
           </div>
         )}
 

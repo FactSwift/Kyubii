@@ -156,28 +156,188 @@ export function getCourseCoordinates(course: Course): [number, number][] {
 export interface TripPlan {
   spots: Spot[];
   recommendedCourse: Course | null;
+  estimatedDuration?: number; // Total time in minutes (travel + activity)
+  totalTravelTime?: number; // Travel time only in minutes
+  totalActivityTime?: number; // Activity time only in minutes
+  totalDistance?: number; // in km
 }
 
-export function planTrip(interests: Interest[], duration: TripDuration): TripPlan {
-  // Filter spots by selected interests
-  const filteredSpots = filterSpotsByCategories(interests).filter(
-    (spot) => !spot.isBusStop
+// Advanced trip preferences interface
+export interface CategoryTimePrefs {
+  gourmet: number;
+  activity: number;
+  tourism: number;
+  hotspring: number;
+}
+
+export interface TripPreferences {
+  totalTimeHours: number;
+  categoryTimes: CategoryTimePrefs;
+  maxDistanceKm: number;
+  selectedCategories: Category[];
+}
+
+// Center point of Nasu tourism area (for distance calculations)
+const NASU_CENTER: [number, number] = [37.058, 140.005];
+
+// Calculate distance between two coordinates using Haversine formula (in km)
+function calculateDistance(
+  lat1: number, lng1: number,
+  lat2: number, lng2: number
+): number {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+// Estimate travel time between two points (in minutes)
+// Uses road distance multiplier and average speed for Nasu mountain roads
+function estimateTravelTime(
+  lat1: number, lng1: number,
+  lat2: number, lng2: number
+): number {
+  const straightLineDistance = calculateDistance(lat1, lng1, lat2, lng2);
+  
+  // Road distance is typically 1.3-1.5x straight line in mountainous areas
+  const roadDistanceMultiplier = 1.4;
+  const estimatedRoadDistance = straightLineDistance * roadDistanceMultiplier;
+  
+  // Average speed in Nasu (mountainous roads, traffic): 30 km/h
+  const averageSpeedKmh = 30;
+  
+  // Convert to minutes, minimum 5 min for any trip
+  return Math.max(5, Math.round((estimatedRoadDistance / averageSpeedKmh) * 60));
+}
+
+// Get average time for a spot based on its categories
+function getSpotDuration(spot: Spot, categoryTimes: CategoryTimePrefs): number {
+  if (spot.categories.length === 0) return 30; // Default for bus stops
+  
+  const totalTime = spot.categories.reduce(
+    (sum, cat) => sum + categoryTimes[cat], 0
   );
+  return totalTime / spot.categories.length;
+}
 
-  // Limit based on duration
-  const limit = duration === "half-day" ? 3 : 6;
-  const selectedSpots = filteredSpots.slice(0, limit);
+// Advanced trip planning with user preferences
+export function planTripAdvanced(prefs: TripPreferences): TripPlan {
+  const { totalTimeHours, categoryTimes, maxDistanceKm, selectedCategories } = prefs;
+  const totalMinutes = totalTimeHours * 60;
+  
+  // Filter spots by selected categories and distance from center
+  let eligibleSpots = spots.filter((spot) => {
+    // Skip bus stops
+    if (spot.isBusStop) return false;
+    // Skip suspended spots
+    if (spot.status !== "active") return false;
+    
+    // Must have at least one selected category
+    const hasCategory = spot.categories.some(cat => 
+      selectedCategories.includes(cat)
+    );
+    if (!hasCategory) return false;
+    
+    // Must be within distance limit
+    const distance = calculateDistance(
+      NASU_CENTER[0], NASU_CENTER[1],
+      spot.lat, spot.lng
+    );
+    if (distance > maxDistanceKm) return false;
+    
+    return true;
+  });
 
-  // Find the course with most overlap
+  // Score spots based on category match strength
+  const scoredSpots = eligibleSpots.map(spot => {
+    const matchingCategories = spot.categories.filter(cat => 
+      selectedCategories.includes(cat)
+    ).length;
+    const categoryScore = matchingCategories / selectedCategories.length;
+    
+    // Bonus for spots that match multiple selected interests
+    const multiMatchBonus = matchingCategories > 1 ? 0.2 : 0;
+    
+    return {
+      spot,
+      score: categoryScore + multiMatchBonus,
+      duration: getSpotDuration(spot, categoryTimes),
+    };
+  });
+
+  // Sort by score (highest first)
+  scoredSpots.sort((a, b) => b.score - a.score);
+
+  // Select spots that fit within time budget using actual travel time estimates
+  const selectedSpots: Spot[] = [];
+  let totalTravelTime = 0;
+  let totalActivityTime = 0;
+  let totalDistanceCovered = 0;
+  let lastSpot: Spot | null = null;
+
+  for (const { spot, duration } of scoredSpots) {
+    // Calculate travel time from last spot (or first spot gets 0 travel time)
+    let travelTime = 0;
+    if (lastSpot) {
+      travelTime = estimateTravelTime(
+        lastSpot.lat, lastSpot.lng,
+        spot.lat, spot.lng
+      );
+    }
+    
+    const totalTimeForSpot = duration + travelTime;
+    const currentTotalTime = totalTravelTime + totalActivityTime;
+    
+    // Check if we have time for this spot
+    if (currentTotalTime + totalTimeForSpot <= totalMinutes) {
+      selectedSpots.push(spot);
+      totalTravelTime += travelTime;
+      totalActivityTime += duration;
+      
+      // Calculate distance from last spot
+      if (lastSpot) {
+        totalDistanceCovered += calculateDistance(
+          lastSpot.lat, lastSpot.lng,
+          spot.lat, spot.lng
+        );
+      }
+      lastSpot = spot;
+    }
+    
+    // Stop if we've hit a reasonable maximum
+    if (selectedSpots.length >= 10) break;
+  }
+
+  // Find the best course based on coverage efficiency
+  // We want: course that covers most of our selected spots, 
+  // AND where our spots make up a good portion of that course
   let bestCourse: Course | null = null;
-  let maxOverlap = 0;
+  let bestScore = 0;
 
   for (const course of courses) {
     const overlap = selectedSpots.filter((spot) =>
       course.spotIds.includes(spot.id)
     ).length;
-    if (overlap > maxOverlap) {
-      maxOverlap = overlap;
+    
+    if (overlap === 0) continue;
+    
+    // Calculate two metrics:
+    // 1. What % of our selected spots are on this course?
+    const coverageRatio = overlap / selectedSpots.length;
+    // 2. What % of this course's spots are in our selection? (efficiency - prefer smaller, focused courses)
+    const efficiencyRatio = overlap / course.spotIds.length;
+    
+    // Combined score: prioritize coverage but also value efficiency
+    // This prevents always picking the longest course (Course A)
+    const score = (coverageRatio * 0.6) + (efficiencyRatio * 0.4);
+    
+    if (score > bestScore) {
+      bestScore = score;
       bestCourse = course;
     }
   }
@@ -185,5 +345,27 @@ export function planTrip(interests: Interest[], duration: TripDuration): TripPla
   return {
     spots: selectedSpots,
     recommendedCourse: bestCourse,
+    estimatedDuration: totalTravelTime + totalActivityTime,
+    totalTravelTime: Math.round(totalTravelTime),
+    totalActivityTime: Math.round(totalActivityTime),
+    totalDistance: Math.round(totalDistanceCovered * 10) / 10,
   };
+}
+
+// Legacy trip planning function (kept for backward compatibility)
+export function planTrip(interests: Interest[], duration: TripDuration): TripPlan {
+  // Convert to advanced preferences
+  const prefs: TripPreferences = {
+    totalTimeHours: duration === "half-day" ? 4 : 8,
+    categoryTimes: {
+      gourmet: 60,
+      activity: 90,
+      tourism: 45,
+      hotspring: 120,
+    },
+    maxDistanceKm: 15,
+    selectedCategories: interests,
+  };
+  
+  return planTripAdvanced(prefs);
 }

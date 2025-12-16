@@ -122,3 +122,81 @@ export async function fetchCourseRoute(
 export function clearRouteCache(): void {
   routeCache.clear();
 }
+
+/**
+ * Estimate travel time between two points based on straight-line distance
+ * Uses a conservative estimate assuming average speed of 30 km/h in mountainous Nasu area
+ * @param lat1 Starting latitude
+ * @param lng1 Starting longitude
+ * @param lat2 Ending latitude
+ * @param lng2 Ending longitude
+ * @returns Estimated travel time in minutes
+ */
+export function estimateTravelTime(
+  lat1: number, lng1: number,
+  lat2: number, lng2: number
+): number {
+  // Haversine formula for distance
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const straightLineDistance = R * c;
+  
+  // Road distance is typically 1.3-1.5x straight line distance in mountainous areas
+  const roadDistanceMultiplier = 1.4;
+  const estimatedRoadDistance = straightLineDistance * roadDistanceMultiplier;
+  
+  // Average speed in Nasu (mountainous roads, traffic): 30 km/h
+  const averageSpeedKmh = 30;
+  
+  // Convert to minutes
+  const travelTimeMinutes = (estimatedRoadDistance / averageSpeedKmh) * 60;
+  
+  // Minimum 5 minutes for any trip (parking, etc.)
+  return Math.max(5, Math.round(travelTimeMinutes));
+}
+
+/**
+ * Fetch actual travel time between two points using OSRM
+ * Falls back to estimation if API fails
+ */
+export async function fetchTravelTime(
+  lat1: number, lng1: number,
+  lat2: number, lng2: number
+): Promise<number> {
+  const result = await fetchRoute([[lat1, lng1], [lat2, lng2]]);
+  
+  if (result) {
+    // OSRM returns duration in seconds, convert to minutes
+    return Math.ceil(result.duration / 60);
+  }
+  
+  // Fallback to estimation
+  return estimateTravelTime(lat1, lng1, lat2, lng2);
+}
+
+/**
+ * Calculate total travel time for a sequence of spots
+ * @param spots Array of spots with lat/lng coordinates
+ * @returns Total estimated travel time in minutes
+ */
+export function calculateTotalTravelTime(
+  spots: { lat: number; lng: number }[]
+): number {
+  if (spots.length < 2) return 0;
+  
+  let totalTime = 0;
+  for (let i = 0; i < spots.length - 1; i++) {
+    totalTime += estimateTravelTime(
+      spots[i].lat, spots[i].lng,
+      spots[i + 1].lat, spots[i + 1].lng
+    );
+  }
+  
+  return totalTime;
+}
