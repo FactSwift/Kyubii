@@ -9,6 +9,7 @@ import {
   Sparkles,
   MapPin,
   Route,
+  ArrowLeft,
 } from "lucide-react";
 import {
   Map,
@@ -16,21 +17,24 @@ import {
   CourseSelector,
   SpotList,
   TripPlannerModal,
+  SpotDetailPanel,
 } from "./components";
 import type { Spot, Category, Course, TripPlan } from "./data";
-import { spots, getVisibleSpots, filterSpotsByCategories } from "./data";
+import { spots, getVisibleSpots, filterSpotsByCategories, getSpotById } from "./data";
 
 export default function Home() {
   // State
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [highlightedSpotId, setHighlightedSpotId] = useState<number | null>(null);
+  const [selectedSpotIds, setSelectedSpotIds] = useState<number[]>([]);
+  const [viewingSpotId, setViewingSpotId] = useState<number | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isBottomSheetExpanded, setIsBottomSheetExpanded] = useState(false);
   const [isPlannerOpen, setIsPlannerOpen] = useState(false);
   const [tripPlan, setTripPlan] = useState<TripPlan | null>(null);
 
-  // Filter spots based on selected categories
+  // Filter spots based on selected categories and individual spot selection
   const filteredSpots = useMemo(() => {
     let filtered = filterSpotsByCategories(selectedCategories);
 
@@ -39,9 +43,13 @@ export default function Home() {
       const plannedIds = tripPlan.spots.map((s) => s.id);
       filtered = filtered.filter((s) => plannedIds.includes(s.id));
     }
+    // If specific spots are selected, show only those
+    else if (selectedSpotIds.length > 0) {
+      filtered = filtered.filter((s) => selectedSpotIds.includes(s.id));
+    }
 
     return filtered;
-  }, [selectedCategories, tripPlan]);
+  }, [selectedCategories, tripPlan, selectedSpotIds]);
 
   // All spots for the list (including suspended for display)
   const allSpotsForList = useMemo(() => {
@@ -63,13 +71,37 @@ export default function Home() {
         : [...prev, category]
     );
     setTripPlan(null); // Clear trip plan when manually filtering
+    setSelectedSpotIds([]); // Clear individual spot selection
+  };
+
+  // Toggle individual spot selection
+  const toggleSpotSelection = (spotId: number) => {
+    setSelectedSpotIds((prev) =>
+      prev.includes(spotId)
+        ? prev.filter((id) => id !== spotId)
+        : [...prev, spotId]
+    );
+    setTripPlan(null); // Clear trip plan when manually selecting
+  };
+
+  // Clear all spot selections
+  const clearSpotSelection = () => {
+    setSelectedSpotIds([]);
   };
 
   const handleSpotClick = (spot: Spot) => {
     setHighlightedSpotId(spot.id);
+    setViewingSpotId(spot.id);
     // On mobile, expand bottom sheet when a spot is clicked
     setIsBottomSheetExpanded(true);
   };
+
+  const handleCloseSpotDetail = () => {
+    setViewingSpotId(null);
+  };
+
+  // Get the spot being viewed
+  const viewingSpot = viewingSpotId ? getSpotById(viewingSpotId) : null;
 
   const handlePlanGenerated = (plan: TripPlan) => {
     setTripPlan(plan);
@@ -82,6 +114,7 @@ export default function Home() {
   const clearTripPlan = () => {
     setTripPlan(null);
     setSelectedCourse(null);
+    setSelectedSpotIds([]);
   };
 
   return (
@@ -102,87 +135,117 @@ export default function Home() {
           isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
-        <div className="flex h-full flex-col">
-          {/* Header */}
-          <div className="border-b border-gray-200 p-4 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Kyubii
-                </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Nasu Digital Map
-                </p>
-              </div>
+        {/* Show Spot Detail Panel when viewing a spot */}
+        {viewingSpot ? (
+          <div className="flex h-full flex-col">
+            {/* Back button header */}
+            <div className="border-b border-gray-200 p-3 dark:border-gray-700">
               <button
-                onClick={() => setIsPlannerOpen(true)}
-                className="flex items-center gap-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                onClick={handleCloseSpotDetail}
+                className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
               >
-                <Sparkles className="h-4 w-4" />
-                Plan Trip
+                <ArrowLeft className="h-4 w-4" />
+                Back to list
               </button>
             </div>
-
-            {/* Trip Plan Banner */}
-            {tripPlan && (
-              <div className="mt-4 flex items-center justify-between rounded-lg bg-purple-100 p-3 dark:bg-purple-900/30">
-                <div className="flex items-center gap-2">
-                  <Route className="h-4 w-4 text-purple-600" />
-                  <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
-                    Trip Plan Active ({tripPlan.spots.length} spots)
-                  </span>
+            <div className="flex-1 overflow-hidden">
+              <SpotDetailPanel spot={viewingSpot} onClose={handleCloseSpotDetail} />
+            </div>
+          </div>
+        ) : (
+          <div className="flex h-full flex-col">
+            {/* Header */}
+            <div className="border-b border-gray-200 p-4 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Kyubii
+                  </h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Nasu Digital Map
+                  </p>
                 </div>
                 <button
-                  onClick={clearTripPlan}
-                  className="text-purple-600 hover:text-purple-800 dark:text-purple-400"
+                  onClick={() => setIsPlannerOpen(true)}
+                  className="flex items-center gap-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
                 >
-                  <X className="h-4 w-4" />
+                  <Sparkles className="h-4 w-4" />
+                  Plan Trip
                 </button>
               </div>
-            )}
-          </div>
 
-          {/* Filters */}
-          <div className="border-b border-gray-200 p-4 dark:border-gray-700">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              Categories
-            </h3>
-            <CategoryFilter
-              selectedCategories={selectedCategories}
-              onToggle={toggleCategory}
-            />
-          </div>
-
-          {/* Course Selector */}
-          <div className="border-b border-gray-200 p-4 dark:border-gray-700">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              Bus Routes
-            </h3>
-            <CourseSelector
-              selectedCourse={tripPlan?.recommendedCourse ?? selectedCourse}
-              onSelect={(course) => {
-                setSelectedCourse(course);
-                if (tripPlan) clearTripPlan();
-              }}
-            />
-          </div>
-
-          {/* Spot List */}
-          <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                Spots ({allSpotsForList.length})
-              </h3>
-              <MapPin className="h-4 w-4 text-gray-400" />
+              {/* Trip Plan Banner */}
+              {tripPlan && (
+                <div className="mt-4 flex items-center justify-between rounded-lg bg-purple-100 p-3 dark:bg-purple-900/30">
+                  <div className="flex items-center gap-2">
+                    <Route className="h-4 w-4 text-purple-600" />
+                    <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                      Trip Plan Active ({tripPlan.spots.length} spots)
+                    </span>
+                  </div>
+                  <button
+                    onClick={clearTripPlan}
+                    className="text-purple-600 hover:text-purple-800 dark:text-purple-400"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
             </div>
-            <SpotList
-              spots={allSpotsForList}
-              onSpotClick={handleSpotClick}
-              highlightedSpotId={highlightedSpotId}
-              showSuspended={!tripPlan}
-            />
+
+            {/* Filters */}
+            <div className="border-b border-gray-200 p-4 dark:border-gray-700">
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                Categories
+              </h3>
+              <CategoryFilter
+                selectedCategories={selectedCategories}
+                onToggle={toggleCategory}
+              />
+            </div>
+
+            {/* Course Selector */}
+            <div className="border-b border-gray-200 p-4 dark:border-gray-700">
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                Bus Routes
+              </h3>
+              <CourseSelector
+                selectedCourse={tripPlan?.recommendedCourse ?? selectedCourse}
+                onSelect={(course) => {
+                  setSelectedCourse(course);
+                  if (tripPlan) clearTripPlan();
+                }}
+              />
+            </div>
+
+            {/* Spot List */}
+            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  Spots ({allSpotsForList.length})
+                </h3>
+                {selectedSpotIds.length > 0 && (
+                  <button
+                    onClick={clearSpotSelection}
+                    className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300"
+                  >
+                    {selectedSpotIds.length} selected
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+              <SpotList
+                spots={allSpotsForList}
+                onSpotClick={handleSpotClick}
+                onSpotSelect={toggleSpotSelection}
+                highlightedSpotId={highlightedSpotId}
+                selectedSpotIds={selectedSpotIds}
+                showSuspended={!tripPlan}
+                selectionMode={true}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </aside>
 
       {/* Mobile Header */}
@@ -258,43 +321,74 @@ export default function Home() {
             className="overflow-y-auto px-4 pb-8 custom-scrollbar"
             style={{ maxHeight: "calc(70vh - 120px)" }}
           >
-            {/* Category filter */}
-            <div className="mb-4">
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                Filter
-              </h3>
-              <CategoryFilter
-                selectedCategories={selectedCategories}
-                onToggle={toggleCategory}
-              />
-            </div>
+            {viewingSpot ? (
+              /* Show Spot Detail Panel when viewing a spot */
+              <div className="flex flex-col">
+                <button
+                  onClick={handleCloseSpotDetail}
+                  className="mb-3 flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to list
+                </button>
+                <SpotDetailPanel spot={viewingSpot} onClose={handleCloseSpotDetail} />
+              </div>
+            ) : (
+              /* Normal filters and list view */
+              <>
+                {/* Category filter */}
+                <div className="mb-4">
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    Filter
+                  </h3>
+                  <CategoryFilter
+                    selectedCategories={selectedCategories}
+                    onToggle={toggleCategory}
+                  />
+                </div>
 
-            {/* Course selector */}
-            <div className="mb-4">
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                Routes
-              </h3>
-              <CourseSelector
-                selectedCourse={tripPlan?.recommendedCourse ?? selectedCourse}
-                onSelect={(course) => {
-                  setSelectedCourse(course);
-                  if (tripPlan) clearTripPlan();
-                }}
-              />
-            </div>
+                {/* Course selector */}
+                <div className="mb-4">
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    Routes
+                  </h3>
+                  <CourseSelector
+                    selectedCourse={tripPlan?.recommendedCourse ?? selectedCourse}
+                    onSelect={(course) => {
+                      setSelectedCourse(course);
+                      if (tripPlan) clearTripPlan();
+                    }}
+                  />
+                </div>
 
-            {/* Spots */}
-            <div>
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                Spots
-              </h3>
-              <SpotList
-                spots={allSpotsForList}
-                onSpotClick={handleSpotClick}
-                highlightedSpotId={highlightedSpotId}
-                showSuspended={!tripPlan}
-              />
-            </div>
+                {/* Spots */}
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                      Spots
+                    </h3>
+                    {selectedSpotIds.length > 0 && (
+                      <button
+                        onClick={clearSpotSelection}
+                        className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300"
+                      >
+                        {selectedSpotIds.length} selected
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                  <SpotList
+                    spots={allSpotsForList}
+                    onSpotClick={handleSpotClick}
+                    onSpotSelect={toggleSpotSelection}
+                    highlightedSpotId={highlightedSpotId}
+                    selectedSpotIds={selectedSpotIds}
+                    showSuspended={!tripPlan}
+                    selectionMode={true}
+                  />
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

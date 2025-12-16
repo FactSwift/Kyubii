@@ -168,3 +168,127 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
+
+/* Detailed popup styling */
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  padding: 0 !important;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+  max-width: 320px !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  width: auto !important;
+  min-width: 280px;
+}
+
+.leaflet-popup-tip {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1) !important;
+}
+
+.spot-popup {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.spot-popup-header {
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+  color: white;
+  padding: 16px;
+}
+
+.spot-popup-header.gourmet {
+  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+}
+
+.spot-popup-header.activity {
+  background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%);
+}
+
+.spot-popup-header.tourism {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+}
+
+.spot-popup-header.hotspring {
+  background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+}
+
+.spot-popup-header.bus-stop {
+  background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);
+}
+
+.spot-popup-body {
+  padding: 16px;
+  background: white;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.spot-popup-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.spot-popup-body::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 2px;
+}
+
+.spot-popup-section {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.spot-popup-section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.spot-popup-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.spot-popup-value {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.spot-popup-link {
+  color: #3b82f6;
+  text-decoration: none;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.spot-popup-link:hover {
+  text-decoration: underline;
+}
+
+.bus-course-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  color: white;
+  margin-right: 4px;
+}
+
+.bus-course-badge.course-a { background: #ef4444; }
+.bus-course-badge.course-c { background: #a855f7; }
+.bus-course-badge.course-d { background: #f97316; }
+.bus-course-badge.course-e { background: #22c55e; }
+.bus-course-badge.course-f { background: #3b82f6; }

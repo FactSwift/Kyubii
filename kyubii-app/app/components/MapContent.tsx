@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from "react-leaflet";
 import L from "leaflet";
-import type { Spot, Course, Category } from "../data";
+import type { Spot, Course } from "../data";
 import { getCourseCoordinates } from "../data";
 import { fetchCourseRoute } from "../lib/routing";
 
@@ -158,58 +158,25 @@ export default function MapContent({
       )}
 
       {/* Render spot markers - only visible spots based on selected course */}
-      {visibleSpots.map((spot) => (
-        <Marker
-          key={spot.id}
-          position={[spot.lat, spot.lng]}
-          icon={createSpotIcon(spot, selectedCourse)}
-          eventHandlers={{
-            click: () => onSpotClick?.(spot),
-          }}
-        >
-          <Popup>
-            <div className="min-w-[150px]">
-              <h3 className="font-semibold text-sm">{spot.name}</h3>
-              <p className="text-xs text-gray-500">#{spot.id}</p>
-              {spot.categories.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {spot.categories.map((cat) => (
-                    <span
-                      key={cat}
-                      className="text-xs px-2 py-0.5 rounded-full capitalize"
-                      style={{
-                        backgroundColor:
-                          cat === "gourmet"
-                            ? "#fed7aa"
-                            : cat === "activity"
-                            ? "#bbf7d0"
-                            : cat === "tourism"
-                            ? "#bfdbfe"
-                            : "#fecaca",
-                        color:
-                          cat === "gourmet"
-                            ? "#c2410c"
-                            : cat === "activity"
-                            ? "#15803d"
-                            : cat === "tourism"
-                            ? "#1d4ed8"
-                            : "#b91c1c",
-                      }}
-                    >
-                      {cat === "hotspring" ? "Hot Spring" : cat}
-                    </span>
-                  ))}
-                </div>
-              )}
-              {spot.isBusStop && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 mt-2 inline-block">
-                  Bus Stop
-                </span>
-              )}
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+      {visibleSpots.map((spot) => {
+        return (
+          <Marker
+            key={spot.id}
+            position={[spot.lat, spot.lng]}
+            icon={createSpotIcon(spot, selectedCourse)}
+            eventHandlers={{
+              click: () => onSpotClick?.(spot),
+            }}
+          >
+            <Popup>
+              <div className="text-center p-1">
+                <p className="font-semibold text-sm">{spot.name}</p>
+                <p className="text-xs text-gray-500">Click for details</p>
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
     </MapContainer>
   );
 }
