@@ -215,6 +215,88 @@ function estimateTravelTime(
   return Math.max(5, Math.round((estimatedRoadDistance / averageSpeedKmh) * 60));
 }
 
+// Calculate total route TRAVEL TIME for a sequence of spots (in minutes)
+function calculateRouteTravelTime(spotList: Spot[]): number {
+  let total = 0;
+  for (let i = 0; i < spotList.length - 1; i++) {
+    total += estimateTravelTime(
+      spotList[i].lat, spotList[i].lng,
+      spotList[i + 1].lat, spotList[i + 1].lng
+    );
+  }
+  return total;
+}
+
+// 2-Opt algorithm to optimize route order - USES TRAVEL TIME not distance
+// Iteratively reverses segments to find faster routes
+function optimizeRoute2Opt(spotList: Spot[]): Spot[] {
+  if (spotList.length <= 2) return spotList;
+  
+  let route = [...spotList];
+  let improved = true;
+  let iterations = 0;
+  const maxIterations = 100; // Prevent infinite loops
+  
+  while (improved && iterations < maxIterations) {
+    improved = false;
+    iterations++;
+    
+    for (let i = 0; i < route.length - 2; i++) {
+      for (let j = i + 2; j < route.length; j++) {
+        // Calculate current TRAVEL TIME for edges (i, i+1) and (j, j+1 or end)
+        const currentTime = 
+          estimateTravelTime(route[i].lat, route[i].lng, route[i + 1].lat, route[i + 1].lng) +
+          (j + 1 < route.length 
+            ? estimateTravelTime(route[j].lat, route[j].lng, route[j + 1].lat, route[j + 1].lng)
+            : 0);
+        
+        // Calculate new TRAVEL TIME if we reverse the segment between i+1 and j
+        const newTime = 
+          estimateTravelTime(route[i].lat, route[i].lng, route[j].lat, route[j].lng) +
+          (j + 1 < route.length 
+            ? estimateTravelTime(route[i + 1].lat, route[i + 1].lng, route[j + 1].lat, route[j + 1].lng)
+            : 0);
+        
+        // If new route is FASTER, apply the 2-opt swap
+        if (newTime < currentTime - 0.5) { // 0.5 min threshold
+          // Reverse the segment from i+1 to j
+          const newRoute = [
+            ...route.slice(0, i + 1),
+            ...route.slice(i + 1, j + 1).reverse(),
+            ...route.slice(j + 1)
+          ];
+          route = newRoute;
+          improved = true;
+        }
+      }
+    }
+  }
+  
+  return route;
+}
+
+// Find nearest bus stop to a given location
+function findNearestBusStop(lat: number, lng: number): Spot | null {
+  const busStops = spots.filter(s => s.isBusStop);
+  if (busStops.length === 0) return null;
+  
+  let nearest: Spot | null = null;
+  let minTime = Infinity;
+  
+  for (const stop of busStops) {
+    const time = estimateTravelTime(lat, lng, stop.lat, stop.lng);
+    if (time < minTime) {
+      minTime = time;
+      nearest = stop;
+    }
+  }
+  
+  return nearest;
+}
+
+// Bus stop waiting time (average wait for Nasu bus)
+const BUS_STOP_WAIT_TIME = 15; // 15 minutes average wait
+
 // Get average time for a spot based on its categories
 function getSpotDuration(spot: Spot, categoryTimes: CategoryTimePrefs): number {
   if (spot.categories.length === 0) return 30; // Default for bus stops
@@ -232,7 +314,7 @@ export function planTripAdvanced(prefs: TripPreferences): TripPlan {
   
   // Filter spots by selected categories and distance from center
   let eligibleSpots = spots.filter((spot) => {
-    // Skip bus stops
+    // Skip bus stops for main selection (we'll add them later)
     if (spot.isBusStop) return false;
     // Skip suspended spots
     if (spot.status !== "active") return false;
@@ -277,7 +359,6 @@ export function planTripAdvanced(prefs: TripPreferences): TripPlan {
   const selectedSpots: Spot[] = [];
   let totalTravelTime = 0;
   let totalActivityTime = 0;
-  let totalDistanceCovered = 0;
   let lastSpot: Spot | null = null;
 
   for (const { spot, duration } of scoredSpots) {
@@ -298,14 +379,6 @@ export function planTripAdvanced(prefs: TripPreferences): TripPlan {
       selectedSpots.push(spot);
       totalTravelTime += travelTime;
       totalActivityTime += duration;
-      
-      // Calculate distance from last spot
-      if (lastSpot) {
-        totalDistanceCovered += calculateDistance(
-          lastSpot.lat, lastSpot.lng,
-          spot.lat, spot.lng
-        );
-      }
       lastSpot = spot;
     }
     
@@ -313,40 +386,86 @@ export function planTripAdvanced(prefs: TripPreferences): TripPlan {
     if (selectedSpots.length >= 10) break;
   }
 
-  // Find the best course based on coverage efficiency
-  // We want: course that covers most of our selected spots, 
-  // AND where our spots make up a good portion of that course
+  // Optimize route order using 2-Opt algorithm to minimize TRAVEL TIME
+  const optimizedSpots = optimizeRoute2Opt(selectedSpots);
+  
+  // Recalculate travel time with optimized route
+  totalTravelTime = calculateRouteTravelTime(optimizedSpots);
+  
+  // Calculate total distance
+  let totalDistanceCovered = 0;
+  for (let i = 0; i < optimizedSpots.length - 1; i++) {
+    totalDistanceCovered += calculateDistance(
+      optimizedSpots[i].lat, optimizedSpots[i].lng,
+      optimizedSpots[i + 1].lat, optimizedSpots[i + 1].lng
+    );
+  }
+  
+  // Recalculate activity time based on optimized spots
+  totalActivityTime = optimizedSpots.reduce((sum, spot) => {
+    return sum + getSpotDuration(spot, categoryTimes);
+  }, 0);
+
+  // Find the best course by checking which course can actually serve the route
+  // Consider: route coverage AND if bus stops are near our spots
   let bestCourse: Course | null = null;
-  let bestScore = 0;
+  let bestCourseScore = 0;
 
   for (const course of courses) {
-    const overlap = selectedSpots.filter((spot) =>
+    // Count how many of our spots are on this course
+    const spotsOnCourse = optimizedSpots.filter((spot) =>
       course.spotIds.includes(spot.id)
     ).length;
     
-    if (overlap === 0) continue;
+    if (spotsOnCourse === 0) continue;
     
-    // Calculate two metrics:
-    // 1. What % of our selected spots are on this course?
-    const coverageRatio = overlap / selectedSpots.length;
-    // 2. What % of this course's spots are in our selection? (efficiency - prefer smaller, focused courses)
-    const efficiencyRatio = overlap / course.spotIds.length;
+    // Find bus stops on this course
+    const busStopsOnCourse = spots.filter(s => 
+      s.isBusStop && course.spotIds.includes(s.id)
+    );
     
-    // Combined score: prioritize coverage but also value efficiency
-    // This prevents always picking the longest course (Course A)
-    const score = (coverageRatio * 0.6) + (efficiencyRatio * 0.4);
+    // Calculate how accessible our spots are via this course's bus stops
+    let accessibilityScore = 0;
+    for (const spot of optimizedSpots) {
+      // Check if any bus stop on this course is within 10 min walk of this spot
+      for (const busStop of busStopsOnCourse) {
+        const timeToStop = estimateTravelTime(spot.lat, spot.lng, busStop.lat, busStop.lng);
+        if (timeToStop <= 10) {
+          accessibilityScore += 1;
+          break; // Count each spot only once
+        }
+      }
+    }
     
-    if (score > bestScore) {
-      bestScore = score;
+    // Score calculation:
+    // - 50% weight: spots directly on the course
+    // - 30% weight: accessibility via bus stops
+    // - 20% weight: course efficiency (prefer smaller courses that still work)
+    const directCoverage = spotsOnCourse / optimizedSpots.length;
+    const busAccessibility = accessibilityScore / optimizedSpots.length;
+    const courseEfficiency = spotsOnCourse / course.spotIds.length;
+    
+    const score = (directCoverage * 0.5) + (busAccessibility * 0.3) + (courseEfficiency * 0.2);
+    
+    if (score > bestCourseScore) {
+      bestCourseScore = score;
       bestCourse = course;
     }
   }
 
+  // Add bus stop wait time if using a course (user would wait at stops)
+  let busWaitTime = 0;
+  if (bestCourse && optimizedSpots.length > 1) {
+    // Estimate 1-2 bus stops needed for the trip
+    const estimatedBusStops = Math.min(optimizedSpots.length - 1, 2);
+    busWaitTime = estimatedBusStops * BUS_STOP_WAIT_TIME;
+  }
+
   return {
-    spots: selectedSpots,
+    spots: optimizedSpots,
     recommendedCourse: bestCourse,
-    estimatedDuration: totalTravelTime + totalActivityTime,
-    totalTravelTime: Math.round(totalTravelTime),
+    estimatedDuration: totalTravelTime + totalActivityTime + busWaitTime,
+    totalTravelTime: Math.round(totalTravelTime + busWaitTime),
     totalActivityTime: Math.round(totalActivityTime),
     totalDistance: Math.round(totalDistanceCovered * 10) / 10,
   };
