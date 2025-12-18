@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   X,
   Clock,
@@ -44,6 +45,9 @@ export default function SpotDetailPanel({ spot, onClose }: SpotDetailPanelProps)
   const servingCourses = courses.filter((course) =>
     course.spotIds.includes(spot.id)
   );
+
+  // Get spot image filename (padded to 2 digits)
+  const spotImageName = `${String(spot.id).padStart(2, "0")}.png`;
 
   // Header gradient based on category
   const headerGradient = spot.isBusStop
@@ -96,6 +100,23 @@ export default function SpotDetailPanel({ spot, onClose }: SpotDetailPanelProps)
           </div>
         )}
       </div>
+
+      {/* Spot Image */}
+      {!spot.isBusStop && (
+        <div className="relative w-full h-48 bg-gray-100 dark:bg-gray-800">
+          <Image
+            src={`/images/${spotImageName}`}
+            alt={spot.name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 384px"
+            onError={(e) => {
+              // Hide image container if image doesn't exist
+              (e.target as HTMLImageElement).parentElement!.style.display = 'none';
+            }}
+          />
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
