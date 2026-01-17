@@ -159,10 +159,10 @@ export default function Home() {
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                    Kyubii
+                    NASU Navi
                   </h1>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Nasu Digital Map
+                    Nasu Tourism Guide
                   </p>
                 </div>
                 <button
@@ -267,7 +267,7 @@ export default function Home() {
       <header className="absolute left-0 right-0 top-0 z-[100] flex items-center justify-between bg-white/90 p-4 shadow-sm backdrop-blur-sm dark:bg-gray-900/90 lg:hidden">
         <div>
           <h1 className="text-lg font-bold text-gray-900 dark:text-white">
-            Kyubii
+            NASU Navi
           </h1>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             Nasu Digital Map

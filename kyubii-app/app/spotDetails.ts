@@ -55,7 +55,7 @@ export const spotDetails: Record<number, SpotDetails> = {
   },
   5: {
     id: 5,
-    description: "Bus stop location for the Kyubii bus routes.",
+    description: "Bus stop location for the NASU Navi bus routes.",
     address: null,
     phone: null,
     businessHours: null,
@@ -115,7 +115,7 @@ export const spotDetails: Record<number, SpotDetails> = {
   },
   11: {
     id: 11,
-    description: "Bus stop location for the Kyubii bus routes.",
+    description: "Bus stop location for the NASU Navi bus routes.",
     address: null,
     phone: null,
     businessHours: null,
@@ -145,7 +145,7 @@ export const spotDetails: Record<number, SpotDetails> = {
   },
   14: {
     id: 14,
-    description: "Bus stop location for the Kyubii bus routes.",
+    description: "Bus stop location for the NASU Navi bus routes.",
     address: null,
     phone: null,
     businessHours: null,
@@ -245,7 +245,7 @@ export const spotDetails: Record<number, SpotDetails> = {
   },
   24: {
     id: 24,
-    description: "Bus stop location for the Kyubii bus routes.",
+    description: "Bus stop location for the NASU Navi bus routes.",
     address: null,
     phone: null,
     businessHours: null,
@@ -335,7 +335,7 @@ export const spotDetails: Record<number, SpotDetails> = {
   },
   33: {
     id: 33,
-    description: "Bus stop location for the Kyubii bus routes.",
+    description: "Bus stop location for the NASU Navi bus routes.",
     address: null,
     phone: null,
     businessHours: null,

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Kyubii Digital Map",
+  title: "NASU Navi",
   description: "Tourism digital map for Nasu Town, Japan",
 };
 

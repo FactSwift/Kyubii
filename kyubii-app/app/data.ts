@@ -1,4 +1,4 @@
-// Kyubii Digital Map - Data Constants
+// NASU Navi - Data Constants
 // All tourism spots, categories, and bus courses for Nasu Town, Japan
 
 export type SpotStatus = "active" | "suspended";
