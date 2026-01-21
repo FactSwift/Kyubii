@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Image from "next/image";
 import {
   Menu,
   X,
@@ -165,13 +166,30 @@ export default function Home() {
                     Nasu Tourism Guide
                   </p>
                 </div>
-                <button
-                  onClick={() => setIsPlannerOpen(true)}
-                  className="flex items-center gap-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  Plan Trip
-                </button>
+                <div className="flex items-center gap-2">
+                  <a
+                    href="https://chatgpt.com/g/g-6928131447a88191b3bf7557bca4aae0-kyubii"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-50 transition-all hover:bg-orange-100 hover:scale-110 dark:bg-orange-900/20 dark:hover:bg-orange-900/40"
+                    title="Chat with Kyubii AI Assistant"
+                  >
+                    <Image
+                      src="/kyubii-mascot.png"
+                      alt="Kyubii AI Assistant"
+                      width={28}
+                      height={28}
+                      className="rounded-full"
+                    />
+                  </a>
+                  <button
+                    onClick={() => setIsPlannerOpen(true)}
+                    className="flex items-center gap-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Plan Trip
+                  </button>
+                </div>
               </div>
 
               {/* Trip Plan Banner */}
@@ -274,6 +292,21 @@ export default function Home() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <a
+            href="https://chatgpt.com/g/g-6928131447a88191b3bf7557bca4aae0-kyubii"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-50 transition-all hover:bg-orange-100 active:scale-95 dark:bg-orange-900/20"
+            title="Chat with Kyubii AI Assistant"
+          >
+            <Image
+              src="/kyubii-mascot.png"
+              alt="Kyubii AI Assistant"
+              width={24}
+              height={24}
+              className="rounded-full"
+            />
+          </a>
           <button
             onClick={() => setIsPlannerOpen(true)}
             className="rounded-full bg-gradient-to-r from-purple-500 to-blue-500 p-2 text-white"
