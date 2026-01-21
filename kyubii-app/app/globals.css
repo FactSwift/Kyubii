@@ -292,3 +292,25 @@ body {
 .bus-course-badge.course-d { background: #f97316; }
 .bus-course-badge.course-e { background: #22c55e; }
 .bus-course-badge.course-f { background: #3b82f6; }
+
+/* Chat Bubble Animation */
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(20px);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05) translateY(-5px);
+  }
+  70% {
+    transform: scale(0.95) translateY(2px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.6s ease-out forwards;
+}

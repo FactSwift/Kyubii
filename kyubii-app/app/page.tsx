@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import {
   Menu,
@@ -34,6 +34,7 @@ export default function Home() {
   const [isBottomSheetExpanded, setIsBottomSheetExpanded] = useState(false);
   const [isPlannerOpen, setIsPlannerOpen] = useState(false);
   const [tripPlan, setTripPlan] = useState<TripPlan | null>(null);
+  const [showChatBubble, setShowChatBubble] = useState(true);
 
   // Filter spots based on selected categories and individual spot selection
   const filteredSpots = useMemo(() => {
@@ -118,6 +119,16 @@ export default function Home() {
     setSelectedSpotIds([]);
   };
 
+  // Auto-hide chat bubble after 8 seconds
+  useEffect(() => {
+    if (showChatBubble) {
+      const timer = setTimeout(() => {
+        setShowChatBubble(false);
+      }, 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [showChatBubble]);
+
   return (
     <div className="relative h-screen w-full overflow-hidden">
       {/* Map - Full screen background */}
@@ -129,6 +140,44 @@ export default function Home() {
           highlightedSpotId={highlightedSpotId}
         />
       </div>
+
+      {/* Floating Chat Bubble */}
+      {showChatBubble && (
+        <a
+          href="https://chatgpt.com/g/g-6928131447a88191b3bf7557bca4aae0-kyubii"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => setShowChatBubble(false)}
+          className="fixed bottom-24 right-4 z-[200] flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-lg transition-all hover:shadow-xl hover:scale-105 dark:bg-gray-800 lg:bottom-8 lg:right-8 animate-bounce-in"
+        >
+          <div className="relative h-12 w-12 flex-shrink-0">
+            <Image
+              src="/kyubii-mascot.png"
+              alt="Kyubii"
+              fill
+              className="object-contain"
+            />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-bold text-gray-900 dark:text-white">
+              Hello, Kyubii!
+            </span>
+            <span className="text-xs text-orange-600 dark:text-orange-400">
+              Click here for chatbot guide! →
+            </span>
+          </div>
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowChatBubble(false);
+            }}
+            className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-gray-200 text-gray-500 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-400"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </a>
+      )}
 
       {/* Desktop Sidebar */}
       <aside
